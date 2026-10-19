@@ -31,3 +31,16 @@ drop policy if exists "Users can delete their own Daily Reset data" on public.da
 create policy "Users can delete their own Daily Reset data"
   on public.daily_reset_data for delete to authenticated
   using ((select auth.uid()) = user_id);
+
+-- Enable INSERT/UPDATE events for live sync between logged-in devices.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'daily_reset_data'
+  ) then
+    alter publication supabase_realtime add table public.daily_reset_data;
+  end if;
+end $$;
