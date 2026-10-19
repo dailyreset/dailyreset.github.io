@@ -7,7 +7,7 @@
   <meta name="description" content="Daily Reset — habit tracker, to-do list, target bulanan, dan review mingguan.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20261019c">
+  <link rel="stylesheet" href="styles.css?v=20261019d">
   <title>Daily Reset</title>
 </head>
 <body>
@@ -41,7 +41,7 @@
     </header>
 
     <section id="appAccountBar" class="app-account-bar hidden" aria-label="Akun aktif">
-      <div class="app-account-copy"><span class="account-status-dot"></span><div><strong>Daily Reset tersinkron</strong><span id="appUserEmail"></span></div></div>
+      <div class="app-account-copy"><span class="account-status-dot"></span><div><strong id="appSyncStatus">Memeriksa sinkronisasi…</strong><span id="appUserEmail"></span><small id="appSyncMessage" class="app-sync-message">Memeriksa status cloud.</small></div></div>
       <div class="app-account-actions"><button id="cloudSyncBtn" class="secondary-btn" type="button">Sinkronkan</button><button id="cloudLogoutBtn" class="text-btn" type="button">Keluar</button></div>
     </section>
 
@@ -139,6 +139,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=20261019c"></script>
+  <script src="app.js?v=20261019d"></script>
 </body>
 </html>
