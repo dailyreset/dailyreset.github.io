@@ -98,14 +98,11 @@ function renderStats(){
   }
   $("#weekHabit").textContent=total;
   $("#weekTasks").textContent=data.tasks.filter(t=>t.done).length;
-  const key=reviewWeekKey(today), review=data.reviews[key]||{};
-  $("#reviewWin").value=review.win||"";
-  $("#reviewImprove").value=review.improve||"";
-  $("#reviewFocus").value=review.focus||"";
 }
 function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
 function showView(view){
-  $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent="";}
+  $(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>v.classList.toggle("hidden",v.id!==`view-${view}`));
 }
 $$(".tab").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
