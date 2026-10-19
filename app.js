@@ -29,7 +29,7 @@ function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 function load(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const parsed=JSON.parse(raw);return {...defaultData(),...parsed}}}catch(e){}return defaultData()}
 let data=load();
 let taskFilter="all";
-function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));renderStats()}catch(e){toast("Penyimpanan browser gagal. Coba ekspor backup data.")}}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));renderStats();scheduleCloudSave()}catch(e){toast("Penyimpanan browser gagal. Coba ekspor backup data.")}}
 function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
 function currentMonth(){return $("#goalMonth").value||monthKey(new Date())}
 function isDone(h,date=today){return !!h.logs?.[date]}
@@ -181,5 +181,104 @@ $("#installBtn").addEventListener("click",async()=>{
   installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$("#installBtn").classList.add("hidden");
 });
 if("serviceWorker" in navigator && location.protocol!=="file:"){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+
+/* Optional Supabase cloud sync. Local mode remains available until configured. */
+let supabaseClient=null, cloudUser=null, cloudSyncEnabled=false, cloudApplyingRemote=false, cloudSaveTimer=null, cloudSessionHandled="";
+function setCloudStatus(label,message,kind=""){
+  const badge=$("#cloudBadge"),msg=$("#cloudMessage");
+  if(badge){badge.textContent=label;badge.className="cloud-badge"+(kind?" "+kind:"")}
+  if(msg)msg.textContent=message;
+}
+function setCloudSignedIn(user){
+  $("#cloudAuthForm").classList.toggle("hidden",!!user);
+  $("#cloudSignedIn").classList.toggle("hidden",!user);
+  $("#cloudUserEmail").textContent=user?.email||"";
+}
+function scheduleCloudSave(){
+  if(!supabaseClient||!cloudUser||!cloudSyncEnabled||cloudApplyingRemote)return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>pushCloudData(false),900);
+}
+async function pushCloudData(manual){
+  if(!supabaseClient||!cloudUser)return;
+  if(!cloudSyncEnabled){
+    if(!confirm("Akun ini belum memiliki backup cloud. Unggah data yang saat ini tersimpan di browser ke akun ini?"))return;
+    cloudSyncEnabled=true;
+  }
+  setCloudStatus("Menyinkronkan…","Mengunggah data ke Supabase.","busy");
+  const payload=JSON.parse(JSON.stringify(data));
+  const {error}=await supabaseClient.from("daily_reset_data").upsert({user_id:cloudUser.id,data:payload,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  if(error){setCloudStatus("Belum sinkron","Gagal menyimpan ke cloud: "+error.message+". Data lokal tetap tersedia.");if(manual)toast("Sinkronisasi gagal");return}
+  setCloudStatus("Tersinkron","Data terakhir tersimpan di cloud. Perangkat ini akan menyinkronkan perubahan berikutnya.","online");
+  if(manual)toast("Data berhasil disinkronkan ✓");
+}
+async function handleCloudSession(user){
+  cloudUser=user||null;
+  setCloudSignedIn(cloudUser);
+  if(!cloudUser){
+    cloudSyncEnabled=false;cloudSessionHandled="";
+    setCloudStatus(supabaseClient?"Lokal":"Belum disetel",supabaseClient?"Kamu keluar. Data lokal di browser ini tidak dihapus.":"Tambahkan URL dan publishable key Supabase untuk mengaktifkan sinkronisasi.");
+    return;
+  }
+  if(cloudSessionHandled===cloudUser.id)return;
+  cloudSessionHandled=cloudUser.id;
+  cloudSyncEnabled=false;
+  setCloudStatus("Memuat…","Memeriksa data cloud akun kamu.","busy");
+  const {data:row,error}=await supabaseClient.from("daily_reset_data").select("data").eq("user_id",cloudUser.id).maybeSingle();
+  if(error){setCloudStatus("Perlu konfigurasi","Tidak bisa membaca database: "+error.message+". Pastikan SQL schema sudah dijalankan dan RLS aktif.");return}
+  if(row&&row.data&&Array.isArray(row.data.habits)&&Array.isArray(row.data.tasks)&&Array.isArray(row.data.goals)){
+    cloudApplyingRemote=true;
+    data={...defaultData(),...row.data};
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}catch(e){}
+    cloudApplyingRemote=false;
+    cloudSyncEnabled=true;
+    renderAll();
+    setCloudStatus("Tersinkron","Data cloud akun ini berhasil dimuat. Perubahan akan tersimpan otomatis.","online");
+  }else{
+    setCloudStatus("Belum ada backup","Akun ini belum punya data cloud. Pilih “Sinkronkan sekarang” untuk mengunggah data dari browser ini.");
+  }
+}
+function initSupabase(){
+  const url=window.DAILY_RESET_SUPABASE_URL||"";
+  const key=window.DAILY_RESET_SUPABASE_PUBLISHABLE_KEY||"";
+  if(!window.supabase||!url.startsWith("https://")||!key||key.includes("YOUR_SUPABASE")){
+    setCloudStatus("Belum disetel","Buat proyek Supabase, jalankan supabase/schema.sql di SQL Editor, lalu isi URL dan publishable key di supabase-config.js. Mode lokal tetap bisa dipakai.");
+    setCloudSignedIn(null);return;
+  }
+  try{supabaseClient=window.supabase.createClient(url,key)}catch(e){setCloudStatus("Konfigurasi error","Konfigurasi Supabase tidak valid.");return}
+  $("#cloudAuthForm").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const email=$("#cloudEmail").value.trim(),password=$("#cloudPassword").value;
+    $("#cloudLoginBtn").disabled=true;setCloudStatus("Memproses…","Sedang masuk ke akun Supabase.","busy");
+    const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+    $("#cloudLoginBtn").disabled=false;
+    if(error)setCloudStatus("Gagal masuk",error.message);
+  });
+  $("#cloudSignupBtn").addEventListener("click",async()=>{
+    const email=$("#cloudEmail").value.trim(),password=$("#cloudPassword").value;
+    if(!email||password.length<6){setCloudStatus("Periksa data","Masukkan email valid dan password minimal 6 karakter.");return}
+    $("#cloudSignupBtn").disabled=true;setCloudStatus("Membuat akun…","Sedang mendaftarkan akun.","busy");
+    const {data:result,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+    $("#cloudSignupBtn").disabled=false;
+    if(error){setCloudStatus("Gagal membuat akun",error.message);return}
+    if(result.session){await handleCloudSession(result.user)}
+    else setCloudStatus("Cek email","Akun dibuat jika email tersedia. Buka email konfirmasi Supabase, lalu kembali ke sini untuk login.");
+  });
+  $("#cloudLogoutBtn").addEventListener("click",async()=>{
+    const {error}=await supabaseClient.auth.signOut();
+    if(error)setCloudStatus("Gagal keluar",error.message);
+    else toast("Kamu sudah keluar. Data lokal tetap tersimpan.");
+  });
+  $("#cloudSyncBtn").addEventListener("click",()=>pushCloudData(true));
+  supabaseClient.auth.onAuthStateChange((event,session)=>{
+    if(event==="SIGNED_OUT"){handleCloudSession(null);return}
+    if(session?.user)handleCloudSession(session.user);
+  });
+  supabaseClient.auth.getSession().then(({data:sessionData,error})=>{
+    if(error){setCloudStatus("Auth error",error.message);return}
+    handleCloudSession(sessionData.session?.user||null);
+  });
+}
+
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
 renderAll();
