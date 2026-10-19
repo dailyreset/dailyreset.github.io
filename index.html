@@ -139,6 +139,17 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=20261019f"></script>
+  <script>
+    // Fallback navigation: keep tabs usable even if app.js fails to initialize.
+    window.showView = window.showView || function(view) {
+      document.querySelectorAll(".tab[data-view]").forEach(function(button) {
+        button.classList.toggle("active", button.dataset.view === view);
+      });
+      document.querySelectorAll(".view").forEach(function(section) {
+        section.classList.toggle("hidden", section.id !== "view-" + view);
+      });
+    };
+  </script>
+  <script src="app.js?v=20261019g"></script>
 </body>
 </html>
