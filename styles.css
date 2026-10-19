@@ -105,3 +105,11 @@ body{min-height:100vh}
 .habit-drag-handle:active{cursor:grabbing;background:#e2ece1}
 .habit-item.is-dragging{opacity:.55;border-style:dashed;transform:scale(.99)}
 .habit-item.drop-target{border-color:#71947a;box-shadow:0 0 0 2px #e1ece0}
+
+/* Smooth drag interactions for habits on desktop and mobile */
+#habitList .habit-item{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background-color .18s ease}
+.habit-drag-handle{display:grid;place-items:center;touch-action:pan-y;cursor:grab;-webkit-user-select:none;user-select:none}
+.habit-drag-handle:active{cursor:grabbing}
+.habit-item.is-dragging{opacity:.45;transform:scale(.985);background:#f5f8f4}
+.habit-item.drop-target{border:1.5px dashed #71947a;background:#f2f7f1;box-shadow:0 0 0 3px #e2ede1}
+@media(prefers-reduced-motion:reduce){#habitList .habit-item{transition:none}}
