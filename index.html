@@ -64,10 +64,10 @@
     </section>
 
     <nav class="tabs" aria-label="Navigasi aplikasi">
-      <button class="tab active" type="button" data-view="today" onclick="showView(this.dataset.view)">Hari ini</button>
-      <button class="tab" type="button" data-view="tasks" onclick="showView(this.dataset.view)">To-do</button>
-      <button class="tab" type="button" data-view="goals" onclick="showView(this.dataset.view)">Target</button>
-      <button class="tab" type="button" data-view="stats" onclick="showView(this.dataset.view)">Statistik</button>
+      <a class="tab active" href="#view-today" data-view="today" onclick="showView('today')">Hari ini</a>
+      <a class="tab" href="#view-tasks" data-view="tasks" onclick="showView('tasks')">To-do</a>
+      <a class="tab" href="#view-goals" data-view="goals" onclick="showView('goals')">Target</a>
+      <a class="tab" href="#view-stats" data-view="stats" onclick="showView('stats')">Statistik</a>
     </nav>
 
     <section id="view-today" class="view">
@@ -150,6 +150,6 @@
       });
     };
   </script>
-  <script src="app.js?v=20261019g"></script>
+  <script src="app.js?v=20261019h"></script>
 </body>
 </html>
