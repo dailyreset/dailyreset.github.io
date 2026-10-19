@@ -7,7 +7,7 @@
   <meta name="description" content="Daily Reset — habit tracker, to-do list, target bulanan, dan review mingguan.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20261019i">
+  <link rel="stylesheet" href="styles.css?v=20261019j">
   <title>Daily Reset</title>
 </head>
 <body>
@@ -67,6 +67,7 @@
       <a class="tab active" href="#view-today" data-view="today" onclick="showView('today')">Hari ini</a>
       <a class="tab" href="#view-tasks" data-view="tasks" onclick="showView('tasks')">To-do</a>
       <a class="tab" href="#view-goals" data-view="goals" onclick="showView('goals')">Target</a>
+      <a class="tab" href="#view-ideas" data-view="ideas" onclick="showView('ideas')">Ide bisnis</a>
       <a class="tab" href="#view-stats" data-view="stats" onclick="showView('stats')">Statistik</a>
     </nav>
 
@@ -114,6 +115,26 @@
       <p class="muted tiny">Gunakan tombol + dan − pada target untuk memperbarui progres.</p>
     </section>
 
+    <section id="view-ideas" class="view hidden">
+      <div class="section-heading"><div><p class="eyebrow">CAPTURE • TEST • LEARN</p><h2>Business Idea Lab</h2></div><span id="ideaCount" class="pill">0 ide</span></div>
+      <p class="muted">Tangkap ide spontan, uji dengan eksperimen kecil, catat angka nyata, lalu putuskan berdasarkan data apakah layak di-scale.</p>
+      <div class="idea-summary-grid">
+        <article class="idea-summary"><span>Ide aktif</span><strong id="ideaActiveCount">0</strong></article>
+        <article class="idea-summary"><span>Sedang diuji</span><strong id="ideaTestingCount">0</strong></article>
+        <article class="idea-summary"><span>Siap scale</span><strong id="ideaScaleCount">0</strong></article>
+      </div>
+      <form id="ideaForm" class="form-card idea-capture">
+        <p class="eyebrow">QUICK CAPTURE</p><h3>Jangan sampai ide hilang</h3>
+        <label for="ideaTitle">Nama ide bisnis *</label><input id="ideaTitle" maxlength="100" placeholder="Contoh: Paket es teler untuk acara kantor" required>
+        <label for="ideaProblem">Masalah / peluang yang terlihat</label><textarea id="ideaProblem" rows="2" maxlength="500" placeholder="Kebutuhan apa yang belum terpenuhi?"></textarea>
+        <label for="ideaCustomer">Siapa calon pembelinya?</label><input id="ideaCustomer" maxlength="180" placeholder="Contoh: panitia acara, pekerja kantor">
+        <button class="primary-btn" type="submit">+ Simpan ide</button>
+      </form>
+      <div class="idea-toolbar"><h3>Pipeline ide</h3><select id="ideaFilter" aria-label="Filter ide bisnis"><option value="all">Semua ide</option><option value="capture">Baru dicatat</option><option value="validate">Validasi</option><option value="testing">Sedang diuji</option><option value="evaluate">Evaluasi data</option><option value="scale">Siap scale</option><option value="improve">Perlu diperbaiki</option><option value="stop">Dihentikan</option></select></div>
+      <div id="ideaList" class="idea-list"></div>
+      <p class="muted tiny">Catatan: angka dan progres hanya sebaik data yang lu masukkan. “Siap scale” adalah sinyal awal, bukan jaminan hasil masa depan.</p>
+    </section>
+
     <section id="view-stats" class="view hidden">
       <div class="section-heading"><div><p class="eyebrow">LOOK BACK, MOVE FORWARD</p><h2>Statistik mingguan</h2></div></div>
       <div class="stats-grid">
@@ -155,6 +176,6 @@
       });
     };
   </script>
-  <script src="app.js?v=20261019t"></script>
+  <script src="app.js?v=20261019u"></script>
 </body>
 </html>
