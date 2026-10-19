@@ -232,7 +232,7 @@ window.addEventListener("hashchange",()=>{
   if(["today","tasks","goals","stats","ideas"].includes(view))showView(view,false);
 });
 const initialView=location.hash.replace("#view-","");
-if(["today","tasks","goals","stats"].includes(initialView))showView(initialView,false);
+if(["today","tasks","goals","stats","ideas"].includes(initialView))showView(initialView,false);
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
   data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();renderAll();toast("Habit ditambahkan 🌱");
@@ -553,6 +553,11 @@ $("#ideaFilter")?.addEventListener("change",renderIdeas);
 $("#ideaList")?.addEventListener("change",e=>{
   const select=e.target.closest(".idea-stage");if(!select)return;
   const idea=ideaById(select.dataset.id);if(!idea)return;
+  if(select.value==="scale"&&(!(Number(idea.leads)>0||Number(idea.sales)>0||Number(idea.revenue)>0||Number(idea.cost)>0)||!String(idea.decision||"").trim())){
+    select.value=idea.stage;
+    toast("Sebelum scale, simpan data tes dan keputusan berbasis hasil dulu.");
+    return;
+  }
   idea.stage=select.value;save();renderIdeas();toast("Tahap ide diperbarui");
 });
 $("#ideaList")?.addEventListener("submit",e=>{
