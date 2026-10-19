@@ -247,7 +247,7 @@ function subscribeCloudChanges(){
   if(cloudChannel)supabaseClient.removeChannel(cloudChannel);
   const userId=cloudUser.id;
   cloudChannel=supabaseClient.channel("daily-reset-sync-"+userId)
-    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"daily_reset_data",filter:"user_id=eq."+userId},payload=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"daily_reset_data",filter:"user_id=eq."+userId},payload=>{
       if(!cloudUser||cloudUser.id!==userId||!payload.new||payload.new.updated_at===lastCloudUpdatedAt)return;
       if(!payload.new.data||!Array.isArray(payload.new.data.habits))return;
       clearTimeout(cloudSaveTimer);
