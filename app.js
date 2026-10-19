@@ -188,6 +188,9 @@ function setCloudStatus(label,message,kind=""){
   const badge=$("#cloudBadge"),msg=$("#cloudMessage");
   if(badge){badge.textContent=label;badge.className="cloud-badge"+(kind?" "+kind:"")}
   if(msg)msg.textContent=message;
+  const appStatus=$("#appSyncStatus"),appMessage=$("#appSyncMessage");
+  if(appStatus){appStatus.textContent=label;appStatus.className="app-sync-status"+(kind?" "+kind:"")}
+  if(appMessage)appMessage.textContent=message;
 }
 function setCloudSignedIn(user){
   $("#loginScreen").classList.toggle("hidden",!!user);
@@ -206,14 +209,19 @@ async function pushCloudData(manual){
     if(!confirm("Akun ini belum memiliki backup cloud. Unggah data yang saat ini tersimpan di browser ke akun ini?"))return;
     cloudSyncEnabled=true;
   }
-  setCloudStatus("Menyinkronkan…","Mengunggah data ke Supabase.","busy");
+  setCloudStatus("Menyinkronkan…","Menyimpan perubahan ke cloud secara otomatis.","busy");
   const payload=JSON.parse(JSON.stringify(data));
   const updatedAt=new Date().toISOString();
-  const {error}=await supabaseClient.from("daily_reset_data").upsert({user_id:cloudUser.id,data:payload,updated_at:updatedAt},{onConflict:"user_id"});
-  if(error){setCloudStatus("Belum sinkron","Gagal menyimpan ke cloud: "+error.message+". Data lokal tetap tersedia.");if(manual)toast("Sinkronisasi gagal");return}
-  lastCloudUpdatedAt=updatedAt;
-  setCloudStatus("Tersinkron","Data terakhir tersimpan di cloud. Perangkat ini akan menyinkronkan perubahan berikutnya.","online");
-  if(manual)toast("Data berhasil disinkronkan ✓");
+  try{
+    const {error}=await supabaseClient.from("daily_reset_data").upsert({user_id:cloudUser.id,data:payload,updated_at:updatedAt},{onConflict:"user_id"});
+    if(error){setCloudStatus("Belum sinkron","Cloud belum menerima perubahan: "+error.message+". Data lokal tetap tersimpan; coba lagi saat koneksi pulih.");if(manual)toast("Sinkronisasi gagal");return}
+    lastCloudUpdatedAt=updatedAt;
+    setCloudStatus("Tersinkron","Perubahan terakhir berhasil disimpan ke cloud.","online");
+    if(manual)toast("Data berhasil disinkronkan ✓");
+  }catch(error){
+    setCloudStatus("Belum sinkron","Koneksi terputus saat menyimpan. Data lokal tetap tersimpan; ubah data lagi atau tekan Sinkronkan untuk mencoba ulang.");
+    if(manual)toast("Sinkronisasi gagal");
+  }
 }
 async function handleCloudSession(user){
   cloudUser=user||null;
@@ -239,8 +247,11 @@ async function handleCloudSession(user){
     renderAll();subscribeCloudChanges();
     setCloudStatus("Tersinkron","Data cloud akun ini berhasil dimuat. Perubahan akan tersimpan otomatis.","online");
   }else{
+    // First login on an account without a cloud backup: automatically seed it from this browser.
+    cloudSyncEnabled=true;
+    setCloudStatus("Menyinkronkan…","Membuat backup cloud pertama secara otomatis.","busy");
+    await pushCloudData(false);
     subscribeCloudChanges();
-    setCloudStatus("Belum ada backup","Akun ini belum punya data cloud. Pilih “Sinkronkan sekarang” untuk mengunggah data dari browser ini.");
   }
 }
 function subscribeCloudChanges(){
