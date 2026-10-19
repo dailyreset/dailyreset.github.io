@@ -120,7 +120,9 @@
         <article class="stat-card"><p>Habit 7 hari</p><strong id="weekHabit">0</strong><small class="muted">checklist selesai</small></article>
         <article class="stat-card"><p>Tugas selesai</p><strong id="weekTasks">0</strong><small class="muted">total tugas selesai</small></article>
       </div>
-      <div class="chart-card"><h3>Habit per hari</h3><div id="weekChart" class="week-chart"></div></div>
+      <div class="chart-card"><h3>Habit selesai per hari</h3><p class="muted tiny">Grafik menunjukkan habit yang dicentang dari total habit, Senin sampai hari ini.</p><div id="weekChart" class="week-chart"></div></div>
+      <div class="chart-card"><h3>Rincian yang dikerjakan dan belum</h3><div id="weekBreakdown" class="weekly-breakdown"></div></div>
+      <div class="chart-card"><h3>Yang bisa diperbaiki minggu depan</h3><div id="weekInsights" class="weekly-insights"></div></div>
       <form id="reviewForm" class="form-card">
         <p class="eyebrow">WEEKLY REFLECTION</p><h3>Review mingguan</h3>
         <label for="reviewWin">Apa yang berjalan baik?</label><textarea id="reviewWin" rows="2" placeholder="Hal yang kamu banggakan minggu ini..."></textarea>
@@ -128,6 +130,7 @@
         <label for="reviewFocus">Fokus minggu depan</label><textarea id="reviewFocus" rows="2" placeholder="Prioritas utamamu..."></textarea>
         <button class="primary-btn" type="submit">Simpan review</button><p id="reviewSaved" class="muted tiny"></p>
       </form>
+      <div class="chart-card"><h3>Review tersimpan</h3><div id="reviewHistory" class="review-history"></div></div>
       <button id="exportBtn" class="secondary-btn" type="button">Ekspor backup data (.json)</button>
       <div style="height:9px"></div>
       <input id="importFile" class="hidden" type="file" accept="application/json,.json">
