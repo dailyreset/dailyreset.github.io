@@ -111,8 +111,7 @@ function showView(view){
 $$(".tab").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
-  data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
-renderAll();toast("Habit ditambahkan 🌱");
+  data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();renderAll();toast("Habit ditambahkan 🌱");
 });
 $("#habitList").addEventListener("change",e=>{
   if(!e.target.matches(".habit-check"))return;
@@ -169,4 +168,5 @@ $("#installBtn").addEventListener("click",async()=>{
   installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$("#installBtn").classList.add("hidden");
 });
 if("serviceWorker" in navigator && location.protocol!=="file:"){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
 renderAll();
