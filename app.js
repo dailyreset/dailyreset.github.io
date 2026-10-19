@@ -12,6 +12,7 @@ const defaultData = () => ({
     {id:uid(),name:"Review hari ini",category:"Mindset",logs:{}}
   ],
   tasks: [],
+  businessIdeas: [],
   goals: [
     {id:uid(),name:"Olahraga",target:20,current:0,unit:"sesi",month:monthKey(new Date())},
     {id:uid(),name:"Belajar skill",target:20,current:0,unit:"hari",month:monthKey(new Date())},
@@ -165,9 +166,51 @@ function renderStats(){
     }).join(""):'<p class="muted tiny">Review yang disimpan akan muncul di sini.</p>';
   }
 }
-function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
+const IDEA_STAGES=[
+  {id:"capture",label:"Baru dicatat"},{id:"validate",label:"Validasi masalah"},{id:"testing",label:"Sedang diuji"},{id:"evaluate",label:"Evaluasi data"},{id:"scale",label:"Siap scale"},{id:"improve",label:"Perlu diperbaiki"},{id:"stop",label:"Dihentikan"}
+];
+function ideaProgress(idea){
+  const checks=[idea.problem,idea.customer,idea.hypothesis,idea.experiment,idea.hasMetrics,idea.decision].filter(Boolean).length;
+  return Math.round(checks/6*100);
+}
+function renderIdeas(){
+  const list=$("#ideaList");if(!list)return;
+  const ideas=Array.isArray(data.businessIdeas)?data.businessIdeas:[];
+  const filter=$("#ideaFilter")?.value||"all";
+  const visible=ideas.filter(i=>filter==="all"||i.stage===filter);
+  $("#ideaCount").textContent=ideas.length+" ide";
+  $("#ideaActiveCount").textContent=ideas.filter(i=>!["scale","stop"].includes(i.stage)).length;
+  $("#ideaTestingCount").textContent=ideas.filter(i=>["testing","evaluate"].includes(i.stage)).length;
+  $("#ideaScaleCount").textContent=ideas.filter(i=>i.stage==="scale").length;
+  list.innerHTML=visible.length?visible.slice().reverse().map(i=>{
+    const progress=ideaProgress(i),leads=Number(i.leads)||0,sales=Number(i.sales)||0,revenue=Number(i.revenue)||0,cost=Number(i.cost)||0,budget=Number(i.budget)||0;
+    const conversion=leads?Math.round(sales/leads*100):0,profit=revenue-cost;
+    const stageOptions=IDEA_STAGES.map(s=>'<option value="'+s.id+'" '+(i.stage===s.id?'selected':'')+'>'+s.label+'</option>').join("");
+    return '<article class="idea-card" data-idea-id="'+i.id+'">'+
+      '<div class="idea-card-top"><div><p class="eyebrow">IDEA • '+escapeHTML(new Date(i.createdAt||Date.now()).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}))+'</p><h3>'+escapeHTML(i.title)+'</h3></div><button type="button" class="icon-btn idea-delete" data-id="'+i.id+'" aria-label="Hapus ide">×</button></div>'+
+      '<label class="idea-field-label" for="ideaStage-'+i.id+'">Tahap ide</label><select id="ideaStage-'+i.id+'" class="idea-stage" data-id="'+i.id+'">'+stageOptions+'</select>'+
+      '<div class="idea-progress-head"><span>Progres validasi</span><strong>'+progress+'%</strong></div><div class="idea-progress"><span style="width:'+progress+'%"></span></div>'+
+      '<p class="idea-problem">'+escapeHTML(i.problem||"Tambahkan masalah/peluang yang ingin diselesaikan.")+'</p><p class="idea-customer"><strong>Calon pembeli:</strong> '+escapeHTML(i.customer||"Belum ditentukan")+'</p>'+
+      '<details class="idea-details"><summary>Rencana eksperimen & data aktual</summary>'+
+      '<form class="idea-data-form" data-id="'+i.id+'">'+
+      '<label for="hyp-'+i.id+'">Hipotesis yang mau dibuktikan</label><textarea id="hyp-'+i.id+'" name="hypothesis" rows="2" maxlength="500" placeholder="Contoh: 20% orang yang ditawari akan membeli">'+escapeHTML(i.hypothesis||"")+'</textarea>'+
+      '<label for="exp-'+i.id+'">Eksperimen / langkah berikutnya</label><textarea id="exp-'+i.id+'" name="experiment" rows="2" maxlength="500" placeholder="Contoh: tawarkan pre-order ke 30 calon pembeli">'+escapeHTML(i.experiment||"")+'</textarea>'+
+      '<div class="form-row"><div class="field-grow"><label for="budget-'+i.id+'">Batas modal (Rp)</label><input id="budget-'+i.id+'" name="budget" type="number" min="0" value="'+(budget||"")+'" placeholder="500000"></div><div class="field-grow"><label for="cost-'+i.id+'">Biaya aktual (Rp)</label><input id="cost-'+i.id+'" name="cost" type="number" min="0" value="'+(cost||"")+'" placeholder="100000"></div></div>'+
+      '<div class="form-row"><div class="field-grow"><label for="leads-'+i.id+'">Calon pembeli / leads</label><input id="leads-'+i.id+'" name="leads" type="number" min="0" value="'+(leads||"")+'" placeholder="30"></div><div class="field-grow"><label for="sales-'+i.id+'">Pesanan / penjualan</label><input id="sales-'+i.id+'" name="sales" type="number" min="0" value="'+(sales||"")+'" placeholder="6"></div></div>'+
+      '<label for="revenue-'+i.id+'">Omzet aktual (Rp)</label><input id="revenue-'+i.id+'" name="revenue" type="number" min="0" value="'+(revenue||"")+'" placeholder="600000">'+
+      '<label for="notes-'+i.id+'">Hasil / feedback pelanggan</label><textarea id="notes-'+i.id+'" name="notes" rows="2" maxlength="1000" placeholder="Apa yang berhasil, gagal, atau mengejutkan?">'+escapeHTML(i.notes||"")+'</textarea>'+
+      '<label for="decision-'+i.id+'">Keputusan setelah tes</label><textarea id="decision-'+i.id+'" name="decision" rows="2" maxlength="500" placeholder="Scale, ubah penawaran, tes lagi, atau stop — berdasarkan data apa?">'+escapeHTML(i.decision||"")+'</textarea>'+
+      '<button class="primary-btn" type="submit">Simpan hasil eksperimen</button></form></details>'+
+      '<div class="idea-metrics"><div><span>Konversi</span><strong>'+conversion+'%</strong></div><div><span>Omzet</span><strong>'+formatRupiah(revenue)+'</strong></div><div><span>Estimasi laba*</span><strong class="'+(profit<0?"metric-negative":"")+'">'+formatRupiah(profit)+'</strong></div></div>'+
+      '<p class="muted tiny">*Estimasi sederhana: omzet dikurangi biaya yang dicatat, belum termasuk biaya lain yang belum dimasukkan.</p>'+
+      '<button type="button" class="text-btn idea-delete-text" data-id="'+i.id+'">Hapus ide</button></article>';
+  }).join(""):'<div class="idea-empty"><strong>Belum ada ide di sini.</strong><p class="muted">Catat ide spontan di atas. Mulai kecil, lalu kumpulkan bukti dari calon pembeli.</p></div>';
+}
+function formatRupiah(value){return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value)||0)}
+function ideaById(id){return (data.businessIdeas||[]).find(i=>i.id===id)}
+function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderIdeas();renderStats()}
 function showView(view,updateHash=true){
-  if(!["today","tasks","goals","stats"].includes(view))return;
+  if(!["today","tasks","goals","stats","ideas"].includes(view))return;
   if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent=Object.values(review).some(v=>String(v||"").trim())?"Review minggu ini sudah tersimpan ✓":"";}
   $$(".tab[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>{
@@ -186,7 +229,7 @@ document.addEventListener("click",e=>{
 });
 window.addEventListener("hashchange",()=>{
   const view=location.hash.replace("#view-","");
-  if(["today","tasks","goals","stats"].includes(view))showView(view,false);
+  if(["today","tasks","goals","stats","ideas"].includes(view))showView(view,false);
 });
 const initialView=location.hash.replace("#view-","");
 if(["today","tasks","goals","stats"].includes(initialView))showView(initialView,false);
@@ -500,6 +543,32 @@ function initSupabase(){
     handleCloudSession(sessionData.session?.user||null);
   }).catch(error=>setCloudStatus("Auth error",error?.message||"Gagal memeriksa sesi login."));
 }
+$("#ideaForm")?.addEventListener("submit",e=>{
+  e.preventDefault();const title=$("#ideaTitle").value.trim();if(!title)return;
+  data.businessIdeas=Array.isArray(data.businessIdeas)?data.businessIdeas:[];
+  data.businessIdeas.push({id:uid(),title,problem:$("#ideaProblem").value.trim(),customer:$("#ideaCustomer").value.trim(),hypothesis:"",experiment:"",stage:"capture",budget:0,cost:0,leads:0,sales:0,revenue:0,notes:"",decision:"",hasMetrics:false,createdAt:new Date().toISOString()});
+  e.target.reset();save();renderAll();toast("Ide bisnis tersimpan 💡");
+});
+$("#ideaFilter")?.addEventListener("change",renderIdeas);
+$("#ideaList")?.addEventListener("change",e=>{
+  const select=e.target.closest(".idea-stage");if(!select)return;
+  const idea=ideaById(select.dataset.id);if(!idea)return;
+  idea.stage=select.value;save();renderIdeas();toast("Tahap ide diperbarui");
+});
+$("#ideaList")?.addEventListener("submit",e=>{
+  const form=e.target.closest(".idea-data-form");if(!form)return;
+  e.preventDefault();const idea=ideaById(form.dataset.id);if(!idea)return;
+  const values=new FormData(form);
+  ["hypothesis","experiment","notes","decision"].forEach(k=>idea[k]=String(values.get(k)||"").trim());
+  ["budget","cost","leads","sales","revenue"].forEach(k=>idea[k]=Math.max(0,Number(values.get(k))||0));
+  idea.hasMetrics=idea.leads>0||idea.sales>0||idea.revenue>0||idea.cost>0;
+  save();renderAll();toast("Hasil eksperimen tersimpan");
+});
+$("#ideaList")?.addEventListener("click",e=>{
+  const btn=e.target.closest(".idea-delete,.idea-delete-text");if(!btn)return;
+  const idea=ideaById(btn.dataset.id);if(!idea)return;
+  if(confirm('Hapus ide "'+idea.title.replace(/"/g,"")+'"?')){data.businessIdeas=data.businessIdeas.filter(i=>i.id!==idea.id);save();renderAll();toast("Ide dihapus")}
+});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
 initSupabase();
 renderAll();
