@@ -7,11 +7,30 @@
   <meta name="description" content="Daily Reset — habit tracker, to-do list, target bulanan, dan review mingguan.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20261019b">
+  <link rel="stylesheet" href="styles.css?v=20261019c">
   <title>Daily Reset</title>
 </head>
 <body>
-  <main class="app-shell">
+  <section id="loginScreen" class="login-screen">
+    <div class="login-brand">
+      <div class="leaf" aria-hidden="true">✳</div>
+      <p class="eyebrow">YOUR PERSONAL SPACE</p>
+      <h1>Daily Reset<span>.</span></h1>
+      <p class="sub">Small steps, steady growth.</p>
+    </div>
+        <section class="cloud-card login-card" aria-label="Login Daily Reset">
+      <div class="cloud-heading"><div><p class="eyebrow">WELCOME BACK</p><h2>Masuk ke ruangmu</h2></div><span id="cloudBadge" class="cloud-badge">Memuat…</span></div>
+      <p id="cloudMessage" class="muted cloud-message">Login atau buat akun untuk menyimpan habit, tugas, target, dan review di cloud agar bisa diakses dari perangkat lain. Data lokal tetap aman di browser ini.</p>
+      <form id="cloudAuthForm" class="cloud-auth">
+        <label for="cloudEmail">Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="nama@email.com" required>
+        <label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimal 6 karakter" required>
+        <div class="cloud-actions"><button id="cloudLoginBtn" class="primary-btn" type="submit">Masuk</button><button id="cloudSignupBtn" class="secondary-btn" type="submit" formnovalidate>Buat akun</button></div>
+      </form>
+    </section>
+    <p class="login-footnote">A little progress, every day. 🌱</p>
+  </section>
+
+  <main id="appShell" class="app-shell hidden">
     <header class="hero">
       <div>
         <p class="eyebrow">YOUR PERSONAL SPACE</p>
@@ -21,15 +40,9 @@
       <div class="leaf" aria-hidden="true">✳</div>
     </header>
 
-    <section class="cloud-card" aria-label="Akun dan sinkronisasi cloud">
-      <div class="cloud-heading"><div><p class="eyebrow">AKUN & SINKRONISASI</p><h2>Masuk ke Daily Reset</h2></div><span id="cloudBadge" class="cloud-badge">Memuat…</span></div>
-      <p id="cloudMessage" class="muted cloud-message">Login atau buat akun untuk menyimpan habit, tugas, target, dan review di cloud agar bisa diakses dari perangkat lain. Data lokal tetap aman di browser ini.</p>
-      <form id="cloudAuthForm" class="cloud-auth">
-        <label for="cloudEmail">Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="nama@email.com" required>
-        <label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimal 6 karakter" required>
-        <div class="cloud-actions"><button id="cloudLoginBtn" class="primary-btn" type="submit">Masuk</button><button id="cloudSignupBtn" class="secondary-btn" type="submit" formnovalidate>Buat akun</button></div>
-      </form>
-      <div id="cloudSignedIn" class="cloud-signed hidden"><span id="cloudUserEmail" class="cloud-user"></span><button id="cloudSyncBtn" class="secondary-btn" type="button">Sinkronkan sekarang</button><button id="cloudLogoutBtn" class="secondary-btn" type="button">Keluar</button></div>
+    <section id="appAccountBar" class="app-account-bar hidden" aria-label="Akun aktif">
+      <div class="app-account-copy"><span class="account-status-dot"></span><div><strong>Daily Reset tersinkron</strong><span id="appUserEmail"></span></div></div>
+      <div class="app-account-actions"><button id="cloudSyncBtn" class="secondary-btn" type="button">Sinkronkan</button><button id="cloudLogoutBtn" class="text-btn" type="button">Keluar</button></div>
     </section>
 
     <section class="date-row">
@@ -126,6 +139,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=20261019b"></script>
+  <script src="app.js?v=20261019c"></script>
 </body>
 </html>
