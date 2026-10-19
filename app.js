@@ -43,7 +43,7 @@ function renderHabits(){
   const list=$("#habitList");
   $("#habitCount").textContent=`${data.habits.length} habit`;
   list.innerHTML=data.habits.length?data.habits.map(h=>`<article class="habit-item ${isDone(h)?"checked":""}" data-habit-id="${h.id}">
-    <button class="habit-drag-handle" type="button" aria-label="Geser ${escapeHTML(h.name)} ke atas atau bawah" title="Tahan lalu geser">⠿</button>
+    <button class="habit-drag-handle" type="button" draggable="true" aria-label="Geser ${escapeHTML(h.name)} ke atas atau bawah" title="Tahan lalu geser">⠿</button>
     <input class="check habit-check" type="checkbox" data-id="${h.id}" aria-label="Tandai ${escapeHTML(h.name)} selesai hari ini" ${isDone(h)?"checked":""}>
     <div class="item-main"><div class="item-title">${escapeHTML(h.name)}</div><div class="item-sub">${escapeHTML(h.category||"Personal")} · streak ${streak(h)} hari</div></div>
     <button class="icon-btn delete-habit" data-id="${h.id}" aria-label="Hapus habit">×</button>
@@ -204,42 +204,87 @@ $("#habitList").addEventListener("click",e=>{
   const b=e.target.closest(".delete-habit");if(!b)return;
   if(confirm("Hapus habit ini beserta riwayatnya?")){data.habits=data.habits.filter(h=>h.id!==b.dataset.id);save();renderAll();toast("Habit dihapus")}
 });
-let habitDrag=null;
-$("#habitList").addEventListener("pointerdown",e=>{
-  const handle=e.target.closest(".habit-drag-handle");
-  if(!handle)return;
-  const item=handle.closest(".habit-item");
-  if(!item)return;
-  habitDrag={id:item.dataset.habitId,startY:e.clientY};
-  item.classList.add("is-dragging");
-  handle.setPointerCapture?.(e.pointerId);
-  e.preventDefault();
-});
-$("#habitList").addEventListener("pointermove",e=>{
-  if(!habitDrag)return;
-  const item=document.elementFromPoint(e.clientX,e.clientY)?.closest(".habit-item");
-  $("#habitList .habit-item").forEach(el=>el.classList.toggle("drop-target",!!item&&el===item&&el.dataset.habitId!==habitDrag.id));
-});
-function finishHabitDrag(e){
-  if(!habitDrag)return;
-  const draggedId=habitDrag.id;
-  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".habit-item");
-  $("#habitList .habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"));
-  if(target&&target.dataset.habitId!==draggedId){
-    const from=data.habits.findIndex(h=>h.id===draggedId);
-    const to=data.habits.findIndex(h=>h.id===target.dataset.habitId);
-    if(from>=0&&to>=0){
-      const [moved]=data.habits.splice(from,1);
-      const insertAt=e.clientY>target.getBoundingClientRect().top+target.getBoundingClientRect().height/2?to+1:to;
-      data.habits.splice(Math.max(0,Math.min(data.habits.length,insertAt>from?insertAt-1:insertAt)),0,moved);
-      save();renderAll();toast("Urutan habit diperbarui");
-    }
-  }
-  habitDrag=null;
+/* Smooth, reliable habit reordering: dedicated handle + native drag-and-drop for mouse/touch */
+let draggedHabitId=null;
+let touchDragState=null;
+function reorderHabitBefore(dragId,targetId,after=false){
+  if(!dragId||!targetId||dragId===targetId)return false;
+  const from=data.habits.findIndex(h=>h.id===dragId);
+  const to=data.habits.findIndex(h=>h.id===targetId);
+  if(from<0||to<0)return false;
+  const [moved]=data.habits.splice(from,1);
+  let insertAt=data.habits.findIndex(h=>h.id===targetId);
+  if(insertAt<0){data.habits.splice(from,0,moved);return false}
+  if(after)insertAt++;
+  data.habits.splice(insertAt,0,moved);
+  save();renderAll();
+  return true;
 }
-$("#habitList").addEventListener("pointerup",finishHabitDrag);
-$("#habitList").addEventListener("pointercancel",()=>{habitDrag=null;$(".habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"))});
-
+$("#habitList").addEventListener("dragstart",e=>{
+  const handle=e.target.closest(".habit-drag-handle");
+  const item=handle?.closest(".habit-item");
+  if(!item)return;
+  draggedHabitId=item.dataset.habitId;
+  item.classList.add("is-dragging");
+  e.dataTransfer.effectAllowed="move";
+  e.dataTransfer.setData("text/plain",draggedHabitId);
+});
+$("#habitList").addEventListener("dragover",e=>{
+  const target=e.target.closest(".habit-item");
+  if(!draggedHabitId||!target||target.dataset.habitId===draggedHabitId)return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect="move";
+  $$("#habitList .habit-item").forEach(el=>el.classList.toggle("drop-target",el===target));
+});
+$("#habitList").addEventListener("drop",e=>{
+  const target=e.target.closest(".habit-item");
+  if(!draggedHabitId||!target)return;
+  e.preventDefault();
+  const id=draggedHabitId;
+  const after=e.clientY>target.getBoundingClientRect().top+target.getBoundingClientRect().height/2;
+  draggedHabitId=null;
+  reorderHabitBefore(id,target.dataset.habitId,after);
+});
+$("#habitList").addEventListener("dragend",()=>{
+  draggedHabitId=null;
+  $$("#habitList .habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"));
+});
+/* Touch fallback: drag the handle, then release over another habit. */
+$("#habitList").addEventListener("touchstart",e=>{
+  const handle=e.target.closest(".habit-drag-handle");
+  const item=handle?.closest(".habit-item");
+  if(!item)return;
+  const touch=e.touches[0];
+  touchDragState={id:item.dataset.habitId,x:touch.clientX,y:touch.clientY,active:false};
+},{passive:true});
+$("#habitList").addEventListener("touchmove",e=>{
+  if(!touchDragState)return;
+  const touch=e.touches[0];
+  if(!touchDragState.active&&Math.abs(touch.clientY-touchDragState.y)<7&&Math.abs(touch.clientX-touchDragState.x)<7)return;
+  touchDragState.active=true;
+  e.preventDefault();
+  const target=document.elementFromPoint(touch.clientX,touch.clientY)?.closest(".habit-item");
+  $$("#habitList .habit-item").forEach(el=>{
+    el.classList.toggle("is-dragging",el.dataset.habitId===touchDragState.id);
+    el.classList.toggle("drop-target",!!target&&el===target&&el.dataset.habitId!==touchDragState.id);
+  });
+},{passive:false});
+$("#habitList").addEventListener("touchend",e=>{
+  if(!touchDragState)return;
+  const state=touchDragState;touchDragState=null;
+  if(!state.active)return;
+  const touch=e.changedTouches[0];
+  const target=document.elementFromPoint(touch.clientX,touch.clientY)?.closest(".habit-item");
+  $$("#habitList .habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"));
+  if(target&&target.dataset.habitId!==state.id){
+    const after=touch.clientY>target.getBoundingClientRect().top+target.getBoundingClientRect().height/2;
+    reorderHabitBefore(state.id,target.dataset.habitId,after);
+  }
+});
+$("#habitList").addEventListener("touchcancel",()=>{
+  touchDragState=null;
+  $$("#habitList .habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"));
+});
 $("#taskForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#taskInput").value.trim();if(!name)return;
   data.tasks.push({id:uid(),name,due:$("#taskDue").value,priority:$("#taskPriority").value,done:false,created:today});
