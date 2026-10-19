@@ -103,13 +103,30 @@ function renderStats(){
   $("#weekTasks").textContent=data.tasks.filter(t=>t.done).length;
 }
 function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
-function showView(view){
+function showView(view,updateHash=true){
+  if(!["today","tasks","goals","stats"].includes(view))return;
   if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent="";}
   $(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-  $$(".view").forEach(v=>v.classList.toggle("hidden",v.id!==`view-${view}`));
+  $(".view").forEach(v=>{
+    const active=v.id===`view-${view}`;
+    v.classList.toggle("hidden",!active);
+    v.setAttribute("aria-hidden",String(!active));
+  });
+  if(updateHash&&location.hash!==`#view-${view}`)location.hash=`view-${view}`;
 }
 window.showView=showView;
-document.addEventListener("click",e=>{const b=e.target.closest(".tab[data-view]");if(b)showView(b.dataset.view)});
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".tab[data-view]");
+  if(!b)return;
+  e.preventDefault();
+  showView(b.dataset.view);
+});
+window.addEventListener("hashchange",()=>{
+  const view=location.hash.replace("#view-","");
+  if(["today","tasks","goals","stats"].includes(view))showView(view,false);
+});
+const initialView=location.hash.replace("#view-","");
+if(["today","tasks","goals","stats"].includes(initialView))showView(initialView,false);
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
   data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();renderAll();toast("Habit ditambahkan 🌱");
