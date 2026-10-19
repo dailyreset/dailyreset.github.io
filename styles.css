@@ -98,3 +98,10 @@ body{min-height:100vh}
 .goal-progress-metrics small{font-size:10px;color:var(--muted)}
 .goal-progress-metrics b{font-size:11px;overflow-wrap:anywhere}
 .goal-progress-status{font-size:10px;color:var(--sage-mid);font-weight:750;margin:10px 0 0}
+
+
+/* Habit drag-and-drop ordering */
+.habit-drag-handle{flex:0 0 25px;width:25px;height:34px;padding:0;border:0;border-radius:8px;background:#f1f5f0;color:#718573;font-size:21px;line-height:1;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.habit-drag-handle:active{cursor:grabbing;background:#e2ece1}
+.habit-item.is-dragging{opacity:.55;border-style:dashed;transform:scale(.99)}
+.habit-item.drop-target{border-color:#71947a;box-shadow:0 0 0 2px #e1ece0}
