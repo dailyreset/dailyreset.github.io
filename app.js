@@ -88,24 +88,68 @@ function renderGoals(){
   }).join(""):`<p class="muted">Belum ada target untuk bulan ini. Tambahkan target pertamamu di bawah.</p>`;
 }
 function renderStats(){
-  const dates=Array.from({length:7},(_,i)=>shiftDate(today,i-6));
-  let total=0;
+  const weekStart=reviewWeekKey(today);
+  const dates=Array.from({length:7},(_,i)=>shiftDate(weekStart,i)).filter(d=>d<=today);
+  const habitTotal=data.habits.length*dates.length;
+  let completedHabitChecks=0;
   const chart=$("#weekChart");
   if(chart){
     chart.innerHTML=dates.map(d=>{
-      const n=data.habits.filter(h=>isDone(h,d)).length;total+=n;
-      const pct=data.habits.length?n/data.habits.length*100:0;
+      const completed=data.habits.filter(h=>isDone(h,d)).length;
+      const missed=Math.max(0,data.habits.length-completed);
+      completedHabitChecks+=completed;
+      const pct=data.habits.length?completed/data.habits.length*100:0;
       const day=new Intl.DateTimeFormat("id-ID",{weekday:"short"}).format(new Date(`${d}T12:00:00`)).replace(".","");
-      return `<div class="day-bar"><div class="bar-track"><div class="bar-fill" style="height:${pct}%"></div></div><strong>${n}</strong><small>${day}</small></div>`
+      return `<div class="day-bar"><div class="bar-track" title="${completed} habit selesai, ${missed} belum"><div class="bar-fill" style="height:${pct}%"></div></div><strong>${completed}/${data.habits.length}</strong><small>${day}</small></div>`;
     }).join("");
   }
-  $("#weekHabit").textContent=total;
-  $("#weekTasks").textContent=data.tasks.filter(t=>t.done).length;
+  const habitPct=habitTotal?Math.round(completedHabitChecks/habitTotal*100):0;
+  const doneTasks=data.tasks.filter(t=>t.done);
+  const openTasks=data.tasks.filter(t=>!t.done);
+  $("#weekHabit").textContent=completedHabitChecks;
+  $("#weekTasks").textContent=doneTasks.length;
+  const breakdown=$("#weekBreakdown");
+  if(breakdown){
+    const habitRows=data.habits.map(h=>{
+      const done=dates.filter(d=>isDone(h,d)).length;
+      const pct=dates.length?Math.round(done/dates.length*100):0;
+      return `<div class="breakdown-row"><div class="breakdown-copy"><strong>${escapeHTML(h.name)}</strong><small>${done} dari ${dates.length} hari · ${pct}%</small></div><div class="mini-progress"><span style="width:${pct}%"></span></div></div>`;
+    }).join("");
+    const taskRows=list=>list.length?list.map(t=>`<li>${escapeHTML(t.name)}${t.due?` <small>· deadline ${escapeHTML(t.due)}</small>`:""}</li>`).join(""):'<li class="empty-detail">Tidak ada.</li>';
+    breakdown.innerHTML=`
+      <div class="detail-group"><h4>Habit — ${habitPct}% terlaksana</h4>${habitRows||'<p class="empty-detail">Belum ada habit.</p>'}</div>
+      <div class="detail-columns">
+        <div class="detail-group"><h4>Sudah dikerjakan (${doneTasks.length})</h4><ul>${taskRows(doneTasks)}</ul></div>
+        <div class="detail-group"><h4>Belum selesai (${openTasks.length})</h4><ul>${taskRows(openTasks)}</ul></div>
+      </div>`;
+  }
+  const insights=$("#weekInsights");
+  if(insights){
+    const ranked=data.habits.map(h=>({name:h.name,done:dates.filter(d=>isDone(h,d)).length,pct:dates.length?Math.round(dates.filter(d=>isDone(h,d)).length/dates.length*100):0})).sort((a,b)=>a.pct-b.pct);
+    const lowest=ranked[0];
+    const strongest=[...ranked].sort((a,b)=>b.pct-a.pct)[0];
+    const tips=[];
+    if(!data.habits.length)tips.push("Tambahkan 1–3 habit utama agar progres mingguan bisa diukur.");
+    else if(lowest&&lowest.pct<70)tips.push(`Mulai dari habit “${escapeHTML(lowest.name)}” (${lowest.pct}%): kecilkan targetnya jadi langkah 5–10 menit dan pasang pemicu waktu yang jelas.`);
+    else tips.push("Pertahankan rutinitas yang sudah berjalan; pilih satu habit untuk dinaikkan sedikit demi sedikit.");
+    if(openTasks.length)tips.push(`Pilih maksimal 3 tugas dari ${openTasks.length} tugas yang belum selesai sebagai prioritas minggu depan.`);
+    else tips.push("Daftar tugas saat ini sudah tuntas—buat prioritas baru hanya jika memang perlu.");
+    if(strongest&&strongest.name!==lowest?.name)tips.push(`Pertahankan pola yang membantu “${escapeHTML(strongest.name)}” (${strongest.pct}%) dan coba terapkan pada habit lain.`);
+    insights.innerHTML=`<ul>${tips.map(t=>`<li>${t}</li>`).join("")}</ul>`;
+  }
+  const history=$("#reviewHistory");
+  if(history){
+    const entries=Object.entries(data.reviews||{}).filter(([,v])=>v&&[v.win,v.improve,v.focus].some(x=>String(x||"").trim())).sort(([a],[b])=>b.localeCompare(a));
+    history.innerHTML=entries.length?entries.map(([week,v])=>{
+      const label=new Intl.DateTimeFormat("id-ID",{day:"numeric",month:"short",year:"numeric"}).format(new Date(`${week}T12:00:00`));
+      return `<article class="review-entry"><strong>Minggu mulai ${label}</strong>${v.win?`<p><b>Berjalan baik:</b> ${escapeHTML(v.win)}</p>`:""}${v.improve?`<p><b>Perlu diperbaiki:</b> ${escapeHTML(v.improve)}</p>`:""}${v.focus?`<p><b>Fokus berikutnya:</b> ${escapeHTML(v.focus)}</p>`:""}</article>`;
+    }).join(""):'<p class="muted tiny">Review yang disimpan akan muncul di sini.</p>';
+  }
 }
 function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
 function showView(view,updateHash=true){
   if(!["today","tasks","goals","stats"].includes(view))return;
-  if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent="";}
+  if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent=Object.values(review).some(v=>String(v||"").trim())?"Review minggu ini sudah tersimpan ✓":"";}
   $$(".tab[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>{
     const active=v.id===`view-${view}`;
@@ -173,7 +217,7 @@ $("#goalList").addEventListener("click",e=>{
 });
 $("#reviewForm").addEventListener("submit",e=>{
   e.preventDefault();data.reviews[reviewWeekKey(today)]={win:$("#reviewWin").value,improve:$("#reviewImprove").value,focus:$("#reviewFocus").value};
-  save();$("#reviewSaved").textContent="Review tersimpan di perangkat ini ✓";toast("Review tersimpan");
+  save();$("#reviewSaved").textContent="Review tersimpan ✓";renderStats();toast("Review tersimpan");
 });
 $("#exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
