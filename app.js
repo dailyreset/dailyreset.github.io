@@ -183,7 +183,7 @@ $("#installBtn").addEventListener("click",async()=>{
 if("serviceWorker" in navigator && location.protocol!=="file:"){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 
 /* Optional Supabase cloud sync. Local mode remains available until configured. */
-let supabaseClient=null, cloudUser=null, cloudSyncEnabled=false, cloudApplyingRemote=false, cloudSaveTimer=null, cloudSessionHandled="";
+let supabaseClient=null, cloudUser=null, cloudSyncEnabled=false, cloudApplyingRemote=false, cloudSaveTimer=null, cloudSessionHandled="", cloudChannel=null, lastCloudUpdatedAt="";
 function setCloudStatus(label,message,kind=""){
   const badge=$("#cloudBadge"),msg=$("#cloudMessage");
   if(badge){badge.textContent=label;badge.className="cloud-badge"+(kind?" "+kind:"")}
@@ -207,8 +207,10 @@ async function pushCloudData(manual){
   }
   setCloudStatus("Menyinkronkan…","Mengunggah data ke Supabase.","busy");
   const payload=JSON.parse(JSON.stringify(data));
-  const {error}=await supabaseClient.from("daily_reset_data").upsert({user_id:cloudUser.id,data:payload,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+  const updatedAt=new Date().toISOString();
+  const {error}=await supabaseClient.from("daily_reset_data").upsert({user_id:cloudUser.id,data:payload,updated_at:updatedAt},{onConflict:"user_id"});
   if(error){setCloudStatus("Belum sinkron","Gagal menyimpan ke cloud: "+error.message+". Data lokal tetap tersedia.");if(manual)toast("Sinkronisasi gagal");return}
+  lastCloudUpdatedAt=updatedAt;
   setCloudStatus("Tersinkron","Data terakhir tersimpan di cloud. Perangkat ini akan menyinkronkan perubahan berikutnya.","online");
   if(manual)toast("Data berhasil disinkronkan ✓");
 }
@@ -216,7 +218,8 @@ async function handleCloudSession(user){
   cloudUser=user||null;
   setCloudSignedIn(cloudUser);
   if(!cloudUser){
-    cloudSyncEnabled=false;cloudSessionHandled="";
+    if(cloudChannel&&supabaseClient){supabaseClient.removeChannel(cloudChannel);cloudChannel=null}
+    cloudSyncEnabled=false;cloudSessionHandled="";lastCloudUpdatedAt="";
     setCloudStatus(supabaseClient?"Lokal":"Belum disetel",supabaseClient?"Kamu keluar. Data lokal di browser ini tidak dihapus.":"Tambahkan URL dan publishable key Supabase untuk mengaktifkan sinkronisasi.");
     return;
   }
@@ -231,12 +234,28 @@ async function handleCloudSession(user){
     data={...defaultData(),...row.data};
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}catch(e){}
     cloudApplyingRemote=false;
-    cloudSyncEnabled=true;
-    renderAll();
+    cloudSyncEnabled=true;lastCloudUpdatedAt=row.updated_at||"";
+    renderAll();subscribeCloudChanges();
     setCloudStatus("Tersinkron","Data cloud akun ini berhasil dimuat. Perubahan akan tersimpan otomatis.","online");
   }else{
+    subscribeCloudChanges();
     setCloudStatus("Belum ada backup","Akun ini belum punya data cloud. Pilih “Sinkronkan sekarang” untuk mengunggah data dari browser ini.");
   }
+}
+function subscribeCloudChanges(){
+  if(!supabaseClient||!cloudUser)return;
+  if(cloudChannel)supabaseClient.removeChannel(cloudChannel);
+  const userId=cloudUser.id;
+  cloudChannel=supabaseClient.channel("daily-reset-sync-"+userId)
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"daily_reset_data",filter:"user_id=eq."+userId},payload=>{
+      if(!cloudUser||cloudUser.id!==userId||!payload.new||payload.new.updated_at===lastCloudUpdatedAt)return;
+      if(!payload.new.data||!Array.isArray(payload.new.data.habits))return;
+      clearTimeout(cloudSaveTimer);
+      cloudApplyingRemote=true;data={...defaultData(),...payload.new.data};
+      try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}catch(e){}
+      lastCloudUpdatedAt=payload.new.updated_at||"";cloudApplyingRemote=false;renderAll();
+      setCloudStatus("Tersinkron","Perubahan dari perangkat lain sudah diterima.","online");
+    }).subscribe();
 }
 function initSupabase(){
   const url=window.DAILY_RESET_SUPABASE_URL||"";
@@ -281,4 +300,5 @@ function initSupabase(){
 }
 
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
+initSupabase();
 renderAll();
