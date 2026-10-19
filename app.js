@@ -34,7 +34,10 @@ function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("sh
 function currentMonth(){return $("#goalMonth").value||monthKey(new Date())}
 function isDone(h,date=today){return !!h.logs?.[date]}
 function renderHeader(){
-  $("#todayLabel").textContent=new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
+  const formattedDate=new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date());
+  $("#todayLabel").textContent=formattedDate;
+  const habitDateLabel=$("#habitDateLabel");
+  if(habitDateLabel)habitDateLabel.textContent=formattedDate;
 }
 function renderHabits(){
   const list=$("#habitList");
