@@ -420,6 +420,18 @@ function subscribeCloudChanges(){
 function initSupabase(){
   const form=$("#cloudAuthForm"),loginBtn=$("#cloudLoginBtn"),signupBtn=$("#cloudSignupBtn");
   const emailInput=$("#cloudEmail"),passwordInput=$("#cloudPassword");
+  const togglePassword=$("#togglePassword");
+  if(togglePassword&&!togglePassword.dataset.ready){
+    togglePassword.dataset.ready="true";
+    togglePassword.addEventListener("click",()=>{
+      const show=passwordInput.type==="password";
+      passwordInput.type=show?"text":"password";
+      togglePassword.setAttribute("aria-pressed",String(show));
+      togglePassword.setAttribute("aria-label",show?"Sembunyikan password":"Tampilkan password");
+      togglePassword.querySelector("span").textContent=show?"Sembunyikan":"Tampilkan";
+      passwordInput.focus({preventScroll:true});
+    });
+  }
   const explainMissingConfig=()=>{
     setCloudStatus("Login belum aktif","Koneksi Supabase belum siap. Muat ulang halaman; jika tetap sama, periksa koneksi internet dan konfigurasi Supabase.");
   };
