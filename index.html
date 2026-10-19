@@ -21,6 +21,17 @@
       <div class="leaf" aria-hidden="true">✳</div>
     </header>
 
+    <section class="cloud-card" aria-label="Akun dan sinkronisasi cloud">
+      <div class="cloud-heading"><div><p class="eyebrow">SYNC ACROSS DEVICES</p><h2>Data kamu, di mana saja</h2></div><span id="cloudBadge" class="cloud-badge">Lokal</span></div>
+      <p id="cloudMessage" class="muted cloud-message">Masuk dengan akun untuk menyinkronkan habit, tugas, target, dan review antarperangkat. Data lokal tetap bisa dipakai tanpa login.</p>
+      <form id="cloudAuthForm" class="cloud-auth">
+        <label for="cloudEmail">Email</label><input id="cloudEmail" type="email" autocomplete="email" placeholder="nama@email.com" required>
+        <label for="cloudPassword">Password</label><input id="cloudPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimal 6 karakter" required>
+        <div class="cloud-actions"><button id="cloudLoginBtn" class="primary-btn" type="submit">Masuk</button><button id="cloudSignupBtn" class="secondary-btn" type="button">Buat akun</button></div>
+      </form>
+      <div id="cloudSignedIn" class="cloud-signed hidden"><span id="cloudUserEmail" class="cloud-user"></span><button id="cloudSyncBtn" class="secondary-btn" type="button">Sinkronkan sekarang</button><button id="cloudLogoutBtn" class="secondary-btn" type="button">Keluar</button></div>
+    </section>
+
     <section class="date-row">
       <div><p class="eyebrow">HARI INI</p><h2 id="todayLabel">—</h2></div>
       <button id="installBtn" class="install-btn hidden" type="button">Pasang app</button>
@@ -113,6 +124,8 @@
     <footer><span class="footer-dot"></span> DAILY RESET <span>•</span> made for your next chapter</footer>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
