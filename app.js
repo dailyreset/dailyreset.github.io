@@ -105,6 +105,7 @@ function showView(view){
   $(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>v.classList.toggle("hidden",v.id!==`view-${view}`));
 }
+window.showView=showView;
 document.addEventListener("click",e=>{const b=e.target.closest(".tab[data-view]");if(b)showView(b.dataset.view)});
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
