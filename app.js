@@ -158,6 +158,22 @@ $("#exportBtn").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`daily-reset-backup-${today}.json`;a.click();URL.revokeObjectURL(url);toast("Backup data dibuat");
 });
+$("#importBtn").addEventListener("click",()=>$("#importFile").click());
+$("#importFile").addEventListener("change",async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file)return;
+  try{
+    const imported=JSON.parse(await file.text());
+    if(!imported||!Array.isArray(imported.habits)||!Array.isArray(imported.tasks)||!Array.isArray(imported.goals)||!imported.reviews||typeof imported.reviews!=="object")throw new Error("Format backup tidak sesuai.");
+    const validHabits=imported.habits.every(x=>x&&typeof x.id==="string"&&typeof x.name==="string"&&x.logs&&typeof x.logs==="object");
+    const validTasks=imported.tasks.every(x=>x&&typeof x.id==="string"&&typeof x.name==="string"&&typeof x.done==="boolean");
+    const validGoals=imported.goals.every(x=>x&&typeof x.id==="string"&&typeof x.name==="string"&&Number.isFinite(Number(x.target))&&Number.isFinite(Number(x.current)));
+    if(!validHabits||!validTasks||!validGoals)throw new Error("Sebagian data backup tidak valid.");
+    if(!confirm("Pulihkan "+imported.habits.length+" habit, "+imported.tasks.length+" tugas, dan "+imported.goals.length+" target? Data saat ini akan diganti."))return;
+    data={...defaultData(),...imported,habits:imported.habits,tasks:imported.tasks,goals:imported.goals,reviews:imported.reviews};
+    save();renderAll();toast("Backup berhasil dipulihkan ✓");
+  }catch(err){toast(err.message||"File backup tidak bisa dibaca.")}
+  finally{e.target.value=""}
+});
 let installPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;$("#installBtn").classList.remove("hidden")});
 $("#installBtn").addEventListener("click",async()=>{
