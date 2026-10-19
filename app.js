@@ -190,9 +190,10 @@ function setCloudStatus(label,message,kind=""){
   if(msg)msg.textContent=message;
 }
 function setCloudSignedIn(user){
-  $("#cloudAuthForm").classList.toggle("hidden",!!user);
-  $("#cloudSignedIn").classList.toggle("hidden",!user);
-  $("#cloudUserEmail").textContent=user?.email||"";
+  $("#loginScreen").classList.toggle("hidden",!!user);
+  $("#appShell").classList.toggle("hidden",!user);
+  $("#appAccountBar").classList.toggle("hidden",!user);
+  $("#appUserEmail").textContent=user?.email||"";
 }
 function scheduleCloudSave(){
   if(!supabaseClient||!cloudUser||!cloudSyncEnabled||cloudApplyingRemote)return;
