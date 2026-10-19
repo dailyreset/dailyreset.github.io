@@ -258,37 +258,67 @@ function subscribeCloudChanges(){
     }).subscribe();
 }
 function initSupabase(){
-  const url=window.DAILY_RESET_SUPABASE_URL||"";
-  const key=window.DAILY_RESET_SUPABASE_PUBLISHABLE_KEY||"";
-  if(!window.supabase||!url.startsWith("https://")||!key||key.includes("YOUR_SUPABASE")){
-    setCloudStatus("Belum disetel","Buat proyek Supabase, jalankan supabase/schema.sql di SQL Editor, lalu isi URL dan publishable key di supabase-config.js. Mode lokal tetap bisa dipakai.");
-    setCloudSignedIn(null);return;
-  }
-  try{supabaseClient=window.supabase.createClient(url,key)}catch(e){setCloudStatus("Konfigurasi error","Konfigurasi Supabase tidak valid.");return}
-  $("#cloudAuthForm").addEventListener("submit",async e=>{
+  const form=$("#cloudAuthForm"),loginBtn=$("#cloudLoginBtn"),signupBtn=$("#cloudSignupBtn");
+  const emailInput=$("#cloudEmail"),passwordInput=$("#cloudPassword");
+  const explainMissingConfig=()=>{
+    setCloudStatus("Login belum aktif","Koneksi Supabase belum siap. Muat ulang halaman; jika tetap sama, periksa koneksi internet dan konfigurasi Supabase.");
+  };
+
+  // Always bind the controls, even if the Supabase SDK/config fails to load.
+  form.addEventListener("submit",async e=>{
     e.preventDefault();
-    const email=$("#cloudEmail").value.trim(),password=$("#cloudPassword").value;
-    $("#cloudLoginBtn").disabled=true;setCloudStatus("Memproses…","Sedang masuk ke akun Supabase.","busy");
-    const {error}=await supabaseClient.auth.signInWithPassword({email,password});
-    $("#cloudLoginBtn").disabled=false;
-    if(error)setCloudStatus("Gagal masuk",error.message);
+    if(!supabaseClient){explainMissingConfig();return}
+    if(!form.reportValidity())return;
+    loginBtn.disabled=true;signupBtn.disabled=true;
+    setCloudStatus("Memproses…","Sedang masuk ke akun Supabase.","busy");
+    try{
+      const {error}=await supabaseClient.auth.signInWithPassword({email:emailInput.value.trim(),password:passwordInput.value});
+      if(error)setCloudStatus("Gagal masuk",error.message);
+    }catch(error){setCloudStatus("Koneksi bermasalah",error?.message||"Tidak dapat menghubungi Supabase. Periksa internet lalu coba lagi.")}
+    finally{loginBtn.disabled=false;signupBtn.disabled=false}
   });
-  $("#cloudSignupBtn").addEventListener("click",async()=>{
-    const email=$("#cloudEmail").value.trim(),password=$("#cloudPassword").value;
-    if(!email||password.length<6){setCloudStatus("Periksa data","Masukkan email valid dan password minimal 6 karakter.");return}
-    $("#cloudSignupBtn").disabled=true;setCloudStatus("Membuat akun…","Sedang mendaftarkan akun.","busy");
-    const {data:result,error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
-    $("#cloudSignupBtn").disabled=false;
-    if(error){setCloudStatus("Gagal membuat akun",error.message);return}
-    if(result.session){await handleCloudSession(result.user)}
-    else setCloudStatus("Cek email","Akun dibuat jika email tersedia. Buka email konfirmasi Supabase, lalu kembali ke sini untuk login.");
+
+  signupBtn.addEventListener("click",async()=>{
+    if(!form.reportValidity())return;
+    if(!supabaseClient){explainMissingConfig();return}
+    signupBtn.disabled=true;loginBtn.disabled=true;
+    setCloudStatus("Membuat akun…","Sedang mendaftarkan akun. Jangan tutup halaman dulu.","busy");
+    try{
+      const {data:result,error}=await supabaseClient.auth.signUp({
+        email:emailInput.value.trim(),
+        password:passwordInput.value,
+        options:{emailRedirectTo:location.origin+location.pathname}
+      });
+      if(error){setCloudStatus("Gagal membuat akun",error.message);return}
+      if(result.session){await handleCloudSession(result.user)}
+      else setCloudStatus("Cek email","Permintaan pendaftaran berhasil diproses. Buka email konfirmasi Supabase, lalu kembali ke halaman ini untuk login.");
+    }catch(error){setCloudStatus("Koneksi bermasalah",error?.message||"Tidak dapat menghubungi Supabase. Periksa internet lalu coba lagi.")}
+    finally{signupBtn.disabled=false;loginBtn.disabled=false}
   });
+
   $("#cloudLogoutBtn").addEventListener("click",async()=>{
-    const {error}=await supabaseClient.auth.signOut();
-    if(error)setCloudStatus("Gagal keluar",error.message);
-    else toast("Kamu sudah keluar. Data lokal tetap tersimpan.");
+    if(!supabaseClient)return;
+    try{
+      const {error}=await supabaseClient.auth.signOut();
+      if(error)setCloudStatus("Gagal keluar",error.message);
+      else toast("Kamu sudah keluar. Data lokal tetap tersimpan.");
+    }catch(error){setCloudStatus("Gagal keluar",error?.message||"Tidak dapat menghubungi Supabase.")}
   });
   $("#cloudSyncBtn").addEventListener("click",()=>pushCloudData(true));
+
+  const url=window.DAILY_RESET_SUPABASE_URL||"";
+  const key=window.DAILY_RESET_SUPABASE_PUBLISHABLE_KEY||"";
+  if(!window.supabase){
+    setCloudStatus("SDK belum termuat","Library login belum berhasil dimuat dari CDN. Periksa internet lalu muat ulang halaman.");
+    setCloudSignedIn(null);return;
+  }
+  if(!url.startsWith("https://")||!key||key.includes("YOUR_SUPABASE")){
+    setCloudStatus("Belum disetel","Konfigurasi Supabase belum lengkap. Mode lokal tetap bisa dipakai.");
+    setCloudSignedIn(null);return;
+  }
+  try{supabaseClient=window.supabase.createClient(url,key)}
+  catch(error){setCloudStatus("Konfigurasi error",error?.message||"Konfigurasi Supabase tidak valid.");return}
+
   supabaseClient.auth.onAuthStateChange((event,session)=>{
     if(event==="SIGNED_OUT"){handleCloudSession(null);return}
     if(session?.user)handleCloudSession(session.user);
@@ -296,9 +326,8 @@ function initSupabase(){
   supabaseClient.auth.getSession().then(({data:sessionData,error})=>{
     if(error){setCloudStatus("Auth error",error.message);return}
     handleCloudSession(sessionData.session?.user||null);
-  });
+  }).catch(error=>setCloudStatus("Auth error",error?.message||"Gagal memeriksa sesi login."));
 }
-
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
 initSupabase();
 renderAll();
