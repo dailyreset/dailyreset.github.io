@@ -123,6 +123,23 @@ function renderStats(){
         <div class="detail-group"><h4>Belum selesai (${openTasks.length})</h4><ul>${taskRows(openTasks)}</ul></div>
       </div>`;
   }
+  const goalProgress=$("#weeklyGoalProgress");
+  if(goalProgress){
+    const monthlyGoals=data.goals.filter(g=>g.month===monthKey(new Date()));
+    goalProgress.innerHTML=monthlyGoals.length?monthlyGoals.map(g=>{
+      const target=Math.max(1,Number(g.target)||1);
+      const actual=Math.max(0,Number(g.current)||0);
+      const pct=Math.round(actual/target*100);
+      const barPct=Math.min(100,pct);
+      const status=pct>=100?"Tercapai":pct>=70?"Hampir tercapai":"Dalam progres";
+      return `<article class="goal-progress-item">
+        <div class="goal-progress-head"><strong>${escapeHTML(g.name)}</strong><span class="goal-progress-pct">${pct}%</span></div>
+        <div class="goal-progress-bar"><span style="width:${barPct}%"></span></div>
+        <div class="goal-progress-metrics"><span><small>Goal</small><b>${target} ${escapeHTML(g.unit)}</b></span><span><small>Aktual</small><b>${actual} ${escapeHTML(g.unit)}</b></span><span><small>Progres</small><b>${Math.max(0,target-actual)} ${escapeHTML(g.unit)} lagi</b></span></div>
+        <p class="goal-progress-status">${status}</p>
+      </article>`;
+    }).join(""):'<p class="muted tiny">Belum ada target bulan ini. Tambahkan target di menu Target untuk melihat goal, aktual, dan persentase progresnya.</p>';
+  }
   const insights=$("#weekInsights");
   if(insights){
     const ranked=data.habits.map(h=>({name:h.name,done:dates.filter(d=>isDone(h,d)).length,pct:dates.length?Math.round(dates.filter(d=>isDone(h,d)).length/dates.length*100):0})).sort((a,b)=>a.pct-b.pct);
