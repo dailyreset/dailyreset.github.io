@@ -264,36 +264,36 @@ function initSupabase(){
     setCloudStatus("Login belum aktif","Koneksi Supabase belum siap. Muat ulang halaman; jika tetap sama, periksa koneksi internet dan konfigurasi Supabase.");
   };
 
-  // Always bind the controls, even if the Supabase SDK/config fails to load.
+  // Handle both actions through the form submit event for reliable keyboard and mouse behavior.
+  form.noValidate=true;
   form.addEventListener("submit",async e=>{
     e.preventDefault();
+    const isSignup=e.submitter?.id==="cloudSignupBtn";
+    const email=emailInput.value.trim(),password=passwordInput.value;
+    if(!emailInput.checkValidity()||!email){
+      setCloudStatus("Periksa email","Masukkan alamat email yang valid terlebih dahulu.");emailInput.focus();return;
+    }
+    if(password.length<6){
+      setCloudStatus("Periksa password","Password harus berisi minimal 6 karakter.");passwordInput.focus();return;
+    }
     if(!supabaseClient){explainMissingConfig();return}
-    if(!form.reportValidity())return;
     loginBtn.disabled=true;signupBtn.disabled=true;
-    setCloudStatus("Memproses…","Sedang masuk ke akun Supabase.","busy");
+    setCloudStatus(isSignup?"Membuat akun…":"Memproses…",isSignup?"Sedang mendaftarkan akun.":"Sedang masuk ke akun Supabase.","busy");
     try{
-      const {error}=await supabaseClient.auth.signInWithPassword({email:emailInput.value.trim(),password:passwordInput.value});
-      if(error)setCloudStatus("Gagal masuk",error.message);
-    }catch(error){setCloudStatus("Koneksi bermasalah",error?.message||"Tidak dapat menghubungi Supabase. Periksa internet lalu coba lagi.")}
-    finally{loginBtn.disabled=false;signupBtn.disabled=false}
-  });
-
-  signupBtn.addEventListener("click",async()=>{
-    if(!form.reportValidity())return;
-    if(!supabaseClient){explainMissingConfig();return}
-    signupBtn.disabled=true;loginBtn.disabled=true;
-    setCloudStatus("Membuat akun…","Sedang mendaftarkan akun. Jangan tutup halaman dulu.","busy");
-    try{
-      const {data:result,error}=await supabaseClient.auth.signUp({
-        email:emailInput.value.trim(),
-        password:passwordInput.value,
-        options:{emailRedirectTo:location.origin+location.pathname}
-      });
-      if(error){setCloudStatus("Gagal membuat akun",error.message);return}
-      if(result.session){await handleCloudSession(result.user)}
-      else setCloudStatus("Cek email","Permintaan pendaftaran berhasil diproses. Buka email konfirmasi Supabase, lalu kembali ke halaman ini untuk login.");
-    }catch(error){setCloudStatus("Koneksi bermasalah",error?.message||"Tidak dapat menghubungi Supabase. Periksa internet lalu coba lagi.")}
-    finally{signupBtn.disabled=false;loginBtn.disabled=false}
+      if(isSignup){
+        const {data:result,error}=await supabaseClient.auth.signUp({
+          email,password,options:{emailRedirectTo:location.origin+location.pathname}
+        });
+        if(error){setCloudStatus("Gagal membuat akun",error.message);return}
+        if(result.session){await handleCloudSession(result.user)}
+        else setCloudStatus("Cek email","Permintaan pendaftaran berhasil diproses. Buka email konfirmasi Supabase, lalu kembali ke halaman ini untuk login.");
+      }else{
+        const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+        if(error)setCloudStatus("Gagal masuk",error.message);
+      }
+    }catch(error){
+      setCloudStatus("Koneksi bermasalah",error?.message||"Tidak dapat menghubungi Supabase. Periksa internet lalu coba lagi.");
+    }finally{loginBtn.disabled=false;signupBtn.disabled=false}
   });
 
   $("#cloudLogoutBtn").addEventListener("click",async()=>{
