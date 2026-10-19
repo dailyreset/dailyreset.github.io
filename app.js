@@ -105,7 +105,7 @@ function showView(view){
   $(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>v.classList.toggle("hidden",v.id!==`view-${view}`));
 }
-$$(".tab").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
+document.addEventListener("click",e=>{const b=e.target.closest(".tab[data-view]");if(b)showView(b.dataset.view)});
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
   data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();renderAll();toast("Habit ditambahkan 🌱");
