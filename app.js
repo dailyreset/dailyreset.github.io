@@ -42,7 +42,8 @@ function renderHeader(){
 function renderHabits(){
   const list=$("#habitList");
   $("#habitCount").textContent=`${data.habits.length} habit`;
-  list.innerHTML=data.habits.length?data.habits.map(h=>`<article class="habit-item ${isDone(h)?"checked":""}">
+  list.innerHTML=data.habits.length?data.habits.map(h=>`<article class="habit-item ${isDone(h)?"checked":""}" data-habit-id="${h.id}">
+    <button class="habit-drag-handle" type="button" aria-label="Geser ${escapeHTML(h.name)} ke atas atau bawah" title="Tahan lalu geser">⠿</button>
     <input class="check habit-check" type="checkbox" data-id="${h.id}" aria-label="Tandai ${escapeHTML(h.name)} selesai hari ini" ${isDone(h)?"checked":""}>
     <div class="item-main"><div class="item-title">${escapeHTML(h.name)}</div><div class="item-sub">${escapeHTML(h.category||"Personal")} · streak ${streak(h)} hari</div></div>
     <button class="icon-btn delete-habit" data-id="${h.id}" aria-label="Hapus habit">×</button>
@@ -61,7 +62,8 @@ function renderTasks(){
   const list=$("#taskList");
   const filtered=data.tasks.filter(t=>taskFilter==="all"||(taskFilter==="open"&&!t.done)||(taskFilter==="done"&&t.done));
   $("#taskCount").textContent=`${data.tasks.length} tugas`;
-  list.innerHTML=filtered.length?filtered.sort((a,b)=>(a.done-b.done)||((a.due||"9999").localeCompare(b.due||"9999"))).map(t=>{
+  const priorityRank={Tinggi:0,Sedang:1,Rendah:2};
+  list.innerHTML=filtered.length?filtered.sort((a,b)=>(Number(a.done)-Number(b.done))||((priorityRank[a.priority]??1)-(priorityRank[b.priority]??1))||((a.due||"9999").localeCompare(b.due||"9999"))).map(t=>{
     const overdue=t.due&&t.due<today&&!t.done;
     let dueLabel=t.due?new Date(`${t.due}T12:00:00`).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}):"Tanpa deadline";
     return `<article class="task-item ${t.done?"is-done":""}">
@@ -202,6 +204,42 @@ $("#habitList").addEventListener("click",e=>{
   const b=e.target.closest(".delete-habit");if(!b)return;
   if(confirm("Hapus habit ini beserta riwayatnya?")){data.habits=data.habits.filter(h=>h.id!==b.dataset.id);save();renderAll();toast("Habit dihapus")}
 });
+let habitDrag=null;
+$("#habitList").addEventListener("pointerdown",e=>{
+  const handle=e.target.closest(".habit-drag-handle");
+  if(!handle)return;
+  const item=handle.closest(".habit-item");
+  if(!item)return;
+  habitDrag={id:item.dataset.habitId,startY:e.clientY};
+  item.classList.add("is-dragging");
+  handle.setPointerCapture?.(e.pointerId);
+  e.preventDefault();
+});
+$("#habitList").addEventListener("pointermove",e=>{
+  if(!habitDrag)return;
+  const item=document.elementFromPoint(e.clientX,e.clientY)?.closest(".habit-item");
+  $("#habitList .habit-item").forEach(el=>el.classList.toggle("drop-target",!!item&&el===item&&el.dataset.habitId!==habitDrag.id));
+});
+function finishHabitDrag(e){
+  if(!habitDrag)return;
+  const draggedId=habitDrag.id;
+  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".habit-item");
+  $("#habitList .habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"));
+  if(target&&target.dataset.habitId!==draggedId){
+    const from=data.habits.findIndex(h=>h.id===draggedId);
+    const to=data.habits.findIndex(h=>h.id===target.dataset.habitId);
+    if(from>=0&&to>=0){
+      const [moved]=data.habits.splice(from,1);
+      const insertAt=e.clientY>target.getBoundingClientRect().top+target.getBoundingClientRect().height/2?to+1:to;
+      data.habits.splice(Math.max(0,Math.min(data.habits.length,insertAt>from?insertAt-1:insertAt)),0,moved);
+      save();renderAll();toast("Urutan habit diperbarui");
+    }
+  }
+  habitDrag=null;
+}
+$("#habitList").addEventListener("pointerup",finishHabitDrag);
+$("#habitList").addEventListener("pointercancel",()=>{habitDrag=null;$(".habit-item").forEach(el=>el.classList.remove("is-dragging","drop-target"))});
+
 $("#taskForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#taskInput").value.trim();if(!name)return;
   data.tasks.push({id:uid(),name,due:$("#taskDue").value,priority:$("#taskPriority").value,done:false,created:today});
