@@ -140,3 +140,39 @@ body{min-height:100vh}
 @keyframes loginFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes authSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.login-screen{animation:none}.login-card{transition:none}.cloud-auth .primary-btn:disabled:after{animation:none}}
+
+/* Business Idea Lab */
+.idea-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0}
+.idea-summary{border:1px solid #e3ebe1;background:#f5f8f4;border-radius:13px;padding:12px 10px;min-width:0}
+.idea-summary span,.idea-metrics span{display:block;color:#77847a;font-size:10px;line-height:1.35}
+.idea-summary strong{display:block;color:#365740;font-size:23px;margin-top:5px}
+.idea-capture{background:#f9fbf8;border-color:#dfe9dc}
+.idea-capture h3,.idea-toolbar h3{margin:0;font-size:16px}
+.idea-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 0 12px}
+.idea-toolbar select,.idea-stage{max-width:100%;border:1px solid #dfe7dd;background:white;border-radius:10px;padding:9px;color:#365740;font-size:11px;font-weight:650}
+.idea-list{display:grid;gap:13px}
+.idea-card{border:1px solid #e2e9e0;border-radius:17px;padding:15px;background:#fff;min-width:0}
+.idea-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.idea-card-top h3{font-size:17px;line-height:1.35;letter-spacing:-.025em;margin:0 0 12px;overflow-wrap:anywhere}
+.idea-card .eyebrow{font-size:9px;margin-bottom:5px}
+.idea-field-label{display:block;font-size:10px;color:#77847a;font-weight:700;margin-bottom:5px}
+.idea-stage{width:100%;margin-bottom:12px}
+.idea-progress-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#6f7d70;margin-bottom:6px}
+.idea-progress-head strong{color:#365740}
+.idea-progress{height:7px;background:#e8eee6;border-radius:9px;overflow:hidden}
+.idea-progress span{display:block;height:100%;background:#71947a;border-radius:9px;transition:width .2s}
+.idea-problem{font-size:12px;line-height:1.5;color:#46564a;margin:13px 0 7px}
+.idea-customer{font-size:11px;color:#77847a;margin:0 0 12px}
+.idea-details{border-top:1px solid #edf0eb;padding-top:11px;margin-top:10px}
+.idea-details summary{cursor:pointer;font-size:12px;color:#365740;font-weight:750;padding:4px 0 8px}
+.idea-data-form{display:grid;gap:8px;padding-top:8px}
+.idea-data-form label{font-size:10px;color:#68766b;font-weight:700}
+.idea-data-form input,.idea-data-form textarea{width:100%;min-width:0;border:1px solid #e0e7df;border-radius:10px;padding:10px;background:#fff;color:var(--ink);font-size:12px;outline:none}
+.idea-data-form input:focus,.idea-data-form textarea:focus{border-color:#9db6a0;box-shadow:0 0 0 3px #eaf2e9}
+.idea-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:14px}
+.idea-metrics>div{background:#f5f8f4;border-radius:10px;padding:10px 8px;min-width:0}
+.idea-metrics strong{display:block;font-size:12px;line-height:1.35;color:#365740;margin-top:5px;overflow-wrap:anywhere}
+.idea-metrics .metric-negative{color:#a34b45}
+.idea-delete-text{font-size:10px;color:#9b6d68;padding:8px 0 0}
+.idea-empty{border:1px dashed #d6e1d3;border-radius:14px;padding:20px;text-align:center}
+@media(max-width:430px){.idea-toolbar{align-items:flex-start;flex-direction:column}.idea-toolbar select{width:100%}.idea-summary{padding:10px 7px}.idea-summary span{font-size:9px}.idea-summary strong{font-size:20px}}
