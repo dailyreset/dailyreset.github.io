@@ -32,3 +32,15 @@ App data is stored in the browser's `localStorage` on the current device and bro
 - `manifest.webmanifest` — installable-app metadata
 - `sw.js` — offline asset cache
 - `icon.svg` — app icon
+
+## Supabase cloud sync setup
+
+1. Create a Supabase project.
+2. Open **SQL Editor** and run the full `supabase/schema.sql` file from this repository.
+3. Open **Project Settings → API** (or the project's Connect/API section) and copy the **Project URL** and **publishable key**. A publishable key is safe for browser use when Row Level Security is enabled; never use a secret or `service_role` key in the website.
+4. Put those two values in `supabase-config.js` and commit the file.
+5. In **Authentication → URL Configuration**, add `https://estelernyonya88-sudo.github.io` to the allowed site URLs / redirect URLs.
+6. In **Authentication → Providers → Email**, choose whether email confirmation is required. If enabled, users need to confirm their email before logging in.
+7. Open the live site, create an account, and choose **Sinkronkan sekarang** to upload existing local data on the first sync.
+
+The SQL enables Row Level Security and limits each authenticated user to their own row. Realtime is enabled for changes so logged-in devices can receive updates. Until the URL and publishable key are configured, the app continues in local-only mode.
