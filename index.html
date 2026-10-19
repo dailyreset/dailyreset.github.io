@@ -7,7 +7,7 @@
   <meta name="description" content="Daily Reset — habit tracker, to-do list, target bulanan, dan review mingguan.">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20261019e">
+  <link rel="stylesheet" href="styles.css?v=20261019f">
   <title>Daily Reset</title>
 </head>
 <body>
@@ -64,10 +64,10 @@
     </section>
 
     <nav class="tabs" aria-label="Navigasi aplikasi">
-      <button class="tab active" data-view="today">Hari ini</button>
-      <button class="tab" data-view="tasks">To-do</button>
-      <button class="tab" data-view="goals">Target</button>
-      <button class="tab" data-view="stats">Statistik</button>
+      <button class="tab active" type="button" data-view="today" onclick="showView(\'today\')">Hari ini</button>
+      <button class="tab" type="button" data-view="tasks" onclick="showView(\'tasks\')">To-do</button>
+      <button class="tab" type="button" data-view="goals" onclick="showView(\'goals\')">Target</button>
+      <button class="tab" type="button" data-view="stats" onclick="showView(\'stats\')">Statistik</button>
     </nav>
 
     <section id="view-today" class="view">
@@ -139,6 +139,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="app.js?v=20261019e"></script>
+  <script src="app.js?v=20261019f"></script>
 </body>
 </html>
