@@ -64,10 +64,10 @@
     </section>
 
     <nav class="tabs" aria-label="Navigasi aplikasi">
-      <button class="tab active" type="button" data-view="today" onclick="showView(\'today\')">Hari ini</button>
-      <button class="tab" type="button" data-view="tasks" onclick="showView(\'tasks\')">To-do</button>
-      <button class="tab" type="button" data-view="goals" onclick="showView(\'goals\')">Target</button>
-      <button class="tab" type="button" data-view="stats" onclick="showView(\'stats\')">Statistik</button>
+      <button class="tab active" type="button" data-view="today" onclick="showView(this.dataset.view)">Hari ini</button>
+      <button class="tab" type="button" data-view="tasks" onclick="showView(this.dataset.view)">To-do</button>
+      <button class="tab" type="button" data-view="goals" onclick="showView(this.dataset.view)">Target</button>
+      <button class="tab" type="button" data-view="stats" onclick="showView(this.dataset.view)">Statistik</button>
     </nav>
 
     <section id="view-today" class="view">
