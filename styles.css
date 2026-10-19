@@ -84,3 +84,17 @@ body{min-height:100vh}
 .review-entry>strong{font-size:11px;color:var(--sage-dark)}
 .review-entry p{font-size:11px;line-height:1.55;margin:8px 0 0;overflow-wrap:anywhere}
 @media(max-width:390px){.detail-columns{grid-template-columns:1fr}.breakdown-copy{align-items:flex-start;flex-direction:column;gap:3px}}
+
+/* Goal vs actual progress summary in weekly statistics */
+.goal-progress-list{display:grid;gap:13px;margin-top:14px}
+.goal-progress-item{padding:13px;border:1px solid #e4ebe2;border-radius:13px;background:#fbfcfa}
+.goal-progress-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.goal-progress-head strong{font-size:12px;overflow-wrap:anywhere}
+.goal-progress-pct{font-size:17px;font-weight:850;color:var(--sage-dark);white-space:nowrap}
+.goal-progress-bar{height:7px;border-radius:9px;background:#e7eee6;overflow:hidden;margin:9px 0 12px}
+.goal-progress-bar span{display:block;height:100%;background:var(--sage);border-radius:9px}
+.goal-progress-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.goal-progress-metrics span{display:grid;gap:4px;min-width:0}
+.goal-progress-metrics small{font-size:10px;color:var(--muted)}
+.goal-progress-metrics b{font-size:11px;overflow-wrap:anywhere}
+.goal-progress-status{font-size:10px;color:var(--sage-mid);font-weight:750;margin:10px 0 0}
