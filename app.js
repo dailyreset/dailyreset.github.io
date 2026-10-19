@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const today = localDate(new Date());
+let today = localDate(new Date());
 const STORAGE_KEY = "daily-reset-v1";
 const defaultData = () => ({
   habits: [
@@ -24,11 +24,12 @@ function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString
 function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function monthKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
 function shiftDate(date,days){const d=new Date(`${date}T12:00:00`);d.setDate(d.getDate()+days);return localDate(d)}
+function reviewWeekKey(date=today){const d=new Date(`${date}T12:00:00`);d.setDate(d.getDate()-((d.getDay()+6)%7));return localDate(d)}
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function load(){try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const parsed=JSON.parse(raw);return {...defaultData(),...parsed}}}catch(e){}return defaultData()}
 let data=load();
 let taskFilter="all";
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data));renderStats()}
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));renderStats()}catch(e){toast("Penyimpanan browser gagal. Coba ekspor backup data.")}}
 function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
 function currentMonth(){return $("#goalMonth").value||monthKey(new Date())}
 function isDone(h,date=today){return !!h.logs?.[date]}
@@ -97,12 +98,12 @@ function renderStats(){
   }
   $("#weekHabit").textContent=total;
   $("#weekTasks").textContent=data.tasks.filter(t=>t.done).length;
-  const key=monthKey(new Date()), review=data.reviews[key]||{};
+  const key=reviewWeekKey(today), review=data.reviews[key]||{};
   $("#reviewWin").value=review.win||"";
   $("#reviewImprove").value=review.improve||"";
   $("#reviewFocus").value=review.focus||"";
 }
-function renderAll(){renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
+function renderAll(){const currentDate=localDate(new Date());if(currentDate!==today)today=currentDate;renderHeader();renderHabits();renderTasks();renderGoals();renderStats()}
 function showView(view){
   $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".view").forEach(v=>v.classList.toggle("hidden",v.id!==`view-${view}`));
@@ -110,7 +111,8 @@ function showView(view){
 $$(".tab").forEach(b=>b.addEventListener("click",()=>showView(b.dataset.view)));
 $("#habitForm").addEventListener("submit",e=>{
   e.preventDefault();const name=$("#habitInput").value.trim();if(!name)return;
-  data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();renderAll();toast("Habit ditambahkan 🌱");
+  data.habits.push({id:uid(),name,category:"Personal",logs:{}});$("#habitInput").value="";save();document.addEventListener("visibilitychange",()=>{if(!document.hidden)renderAll()});
+renderAll();toast("Habit ditambahkan 🌱");
 });
 $("#habitList").addEventListener("change",e=>{
   if(!e.target.matches(".habit-check"))return;
@@ -153,7 +155,7 @@ $("#goalList").addEventListener("click",e=>{
   if(del){data.goals=data.goals.filter(g=>g.id!==del.dataset.id);save();renderGoals();toast("Target dihapus")}
 });
 $("#reviewForm").addEventListener("submit",e=>{
-  e.preventDefault();data.reviews[monthKey(new Date())]={win:$("#reviewWin").value,improve:$("#reviewImprove").value,focus:$("#reviewFocus").value};
+  e.preventDefault();data.reviews[reviewWeekKey(today)]={win:$("#reviewWin").value,improve:$("#reviewImprove").value,focus:$("#reviewFocus").value};
   save();$("#reviewSaved").textContent="Review tersimpan di perangkat ini ✓";toast("Review tersimpan");
 });
 $("#exportBtn").addEventListener("click",()=>{
