@@ -113,3 +113,13 @@ body{min-height:100vh}
 .habit-item.is-dragging{opacity:.45;transform:scale(.985);background:#f5f8f4}
 .habit-item.drop-target{border:1.5px dashed #71947a;background:#f2f7f1;box-shadow:0 0 0 3px #e2ede1}
 @media(prefers-reduced-motion:reduce){#habitList .habit-item{transition:none}}
+
+/* Reliable habit reordering controls */
+.habit-item{gap:9px}
+.habit-drag-handle{flex:0 0 30px;width:30px;min-height:38px;border:0;border-radius:9px;background:#edf3ec;color:#527960;font-size:22px;display:grid;place-items:center;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.habit-order-controls{display:flex;flex-direction:column;gap:3px;flex:0 0 25px}
+.habit-order-controls button{width:25px;height:19px;padding:0;border:1px solid #e1e9df;border-radius:6px;background:#f7faf6;color:#527960;font-size:13px;font-weight:800;line-height:1}
+.habit-order-controls button:disabled{opacity:.25;cursor:default}
+.habit-item.is-dragging{opacity:.45;transform:scale(.985)}
+.habit-item.drop-target{border:1.5px dashed #71947a;background:#f2f7f1;box-shadow:0 0 0 3px #e2ede1}
+@media(prefers-reduced-motion:reduce){#habitList .habit-item{transition:none}}
