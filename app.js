@@ -106,8 +106,8 @@ function renderAll(){const currentDate=localDate(new Date());if(currentDate!==to
 function showView(view,updateHash=true){
   if(!["today","tasks","goals","stats"].includes(view))return;
   if(view==="stats"){const review=data.reviews[reviewWeekKey(today)]||{};$("#reviewWin").value=review.win||"";$("#reviewImprove").value=review.improve||"";$("#reviewFocus").value=review.focus||"";$("#reviewSaved").textContent="";}
-  $(".tab[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-  $(".view").forEach(v=>{
+  $$(".tab[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  $$(".view").forEach(v=>{
     const active=v.id===`view-${view}`;
     v.classList.toggle("hidden",!active);
     v.setAttribute("aria-hidden",String(!active));
